@@ -2,10 +2,9 @@ import React from "react";
 import {
   useForm,
   SubmitHandler,
-  Controller,
-  ControllerRenderProps,
-  ControllerFieldState,
-  UseFormStateReturn,
+  useFieldArray,
+  FieldValues,
+  UseFormGetValues,
 } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -113,16 +112,28 @@ const Yup: React.FC = () => {
     handleSubmit,
     control,
     register,
-    setValue,
-    getValues,
     formState: { errors },
+    watch,
   } = useForm<FormData>({
     resolver: yupResolver(schema) as any,
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "projects",
   });
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
     console.log(data);
   };
+
+  // function watch(arg0: string) {
+  //   throw new Error("Function not implemented.");
+  // }
+
+  // function getValues(arg0: string) {
+  //   throw new Error("Function not implemented.");
+  // }
 
   return (
     <>
@@ -215,87 +226,50 @@ const Yup: React.FC = () => {
           <label className="block text-sm font-medium text-gray-600">
             Projects
           </label>
-          <Controller
-            name="projects"
-            control={control}
-            defaultValue={[{ projectName: "", projectDescription: "" }]}
-            render={({
-              field,
-              
-            }: {
-              field: ControllerRenderProps<FormData, "projects">;
-              fieldState: ControllerFieldState;
-              formState: UseFormStateReturn<FormData>;
-            }) => (
-              <div>
-                {field.value.map((project, index) => (
-                  <div key={index} className="mb-4">
-                    <label className="block text-sm font-medium text-gray-600">
-                      Project Name
-                    </label>
-                    <input
-                      type="text"
-                      onChange={(e) =>
-                        field.onChange([
-                          ...field.value.slice(0, index),
-                          {
-                            ...field.value[index],
-                            projectName: e.target.value,
-                          },
-                          ...field.value.slice(index + 1),
-                        ])
-                      }
-                      onBlur={field.onBlur}
-                      value={field.value[index]?.projectName || ""}
-                      name={`${field.name}.${index}.projectName`}
-                      className="mt-1 p-2 w-full border rounded-md"
-                    />
-                    <p className="text-red-500 text-xs italic">
-                      {errors.projects?.[index]?.projectName?.message}
-                    </p>
+          {fields.map((project, index) => (
+            <div key={project.id} className="mb-4">
+              <label className="block text-sm font-medium text-gray-600">
+                Project Name
+              </label>
+              <input
+                type="text"
+                {...register(`projects.${index}.projectName` as const)}
+                defaultValue={project.projectName}
+                className="mt-1 p-2 w-full border rounded-md"
+              />
+              <p className="text-red-500 text-xs italic">
+                {errors.projects?.[index]?.projectName?.message}
+              </p>
 
-                    <label className="block text-sm font-medium text-gray-600 mt-4">
-                      Project Description
-                    </label>
-                    <input
-                      type="text"
-                      onChange={(e) =>
-                        field.onChange([
-                          ...field.value.slice(0, index),
-                          {
-                            ...field.value[index],
-                            projectDescription: e.target.value,
-                          },
-                          ...field.value.slice(index + 1),
-                        ])
-                      }
-                      onBlur={field.onBlur}
-                      value={field.value[index]?.projectDescription || ""}
-                      name={`${field.name}.${index}.projectDescription`}
-                      className="mt-1 p-2 w-full border rounded-md"
-                    />
-                    <p className="text-red-500 text-xs italic">
-                      {errors.projects?.[index]?.projectDescription?.message}
-                    </p>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newProject = {
-                      projectName: "",
-                      projectDescription: "",
-                    };
-                    field.onChange([...field.value, newProject]);
-                  }}
-                  className="bg-blue-500 text-white p-2 rounded"
-                >
-                  Add Project
-                </button>
-              </div>
-            )}
-          />
+              <label className="block text-sm font-medium text-gray-600 mt-4">
+                Project Description
+              </label>
+              <input
+                type="text"
+                {...register(`projects.${index}.projectDescription` as const)}
+                defaultValue={project.projectDescription}
+                className="mt-1 p-2 w-full border rounded-md"
+              />
+              <p className="text-red-500 text-xs italic">
+                {errors.projects?.[index]?.projectDescription?.message}
+              </p>
 
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="bg-red-500 text-white p-2 rounded mt-4"
+              >
+                Remove Project
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => append({ projectName: "", projectDescription: "" })}
+            className="bg-blue-500 text-white p-2 rounded"
+          >
+            Add Project
+          </button>
           <p className="text-red-500 text-xs italic">
             {errors.projects?.message}
           </p>
@@ -330,41 +304,42 @@ const Yup: React.FC = () => {
           </p>
         </div>
 
-        {getValues("cvType") === "online" ? (
-          <div className="mb-4">
-            <label
-              htmlFor="websiteLink"
-              className="block text-sm font-medium text-gray-600"
-            >
-              Website Link
-            </label>
-            <input
-              type="text"
-              {...register("websiteLink")}
-              className="mt-1 p-2 w-full border rounded-md"
-            />
-            <p className="text-red-500 text-xs italic">
-              {errors.websiteLink?.message}
-            </p>
-          </div>
-        ) : (
-          <div className="mb-4">
-            <label
-              htmlFor="file"
-              className="block text-sm font-medium text-gray-600"
-            >
-              Upload File (PDF or DOC)
-            </label>
-            <input
-              type="file"
-              {...register("file")}
-              className="mt-1 p-2 w-full border rounded-md"
-            />
-            <p className="text-red-500 text-xs italic">
-              {errors.file?.message}
-            </p>
-          </div>
-        )}
+        {watch("cvType") === "online" ? (
+  <div className="mb-4">
+    <label
+      htmlFor="websiteLink"
+      className="block text-sm font-medium text-gray-600"
+    >
+      Website Link
+    </label>
+    <input
+      type="text"
+      {...register("websiteLink")}
+      className="mt-1 p-2 w-full border rounded-md"
+    />
+    <p className="text-red-500 text-xs italic">
+      {errors.websiteLink?.message}
+    </p>
+  </div>
+) : (
+  <div className="mb-4">
+    <label
+      htmlFor="file"
+      className="block text-sm font-medium text-gray-600"
+    >
+      Upload File (PDF or DOC)
+    </label>
+    <input
+      type="file"
+      {...register("file")}
+      className="mt-1 p-2 w-full border rounded-md"
+    />
+    <p className="text-red-500 text-xs italic">
+      {errors.file?.message}
+    </p>
+  </div>
+)}
+
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-600">
